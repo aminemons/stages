@@ -1,139 +1,211 @@
 #!/usr/bin/env python3
-"""Daily technical URL audit for the published internship inventory.
-HTTP checks are NOT confirmation that an internship is open.
-No email is sent, no login attempted, no job application submitted.
+"""Daily link + employer page CONTENT audit. A page is not an accepted application.
+No account access, no emails, no AI-generated contacts, no applications.
 """
 from __future__ import annotations
 import csv
+import html as htmlmod
 import json
 import re
+import socket
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit
-from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "index.html"
-OUT = ROOT / "data"
-OUT.mkdir(exist_ok=True)
+DATA = ROOT / "data"
+DATA.mkdir(exist_ok=True)
 STAMP = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-AGENT = "MaterialsInternshipsAudit/1.0 (public offer URL health, once per day)"
-PATTERN_J = re.compile(r'(<script id="jobdata" type="application/json">)(.*?)(</script>)', re.S)
-PATTERN_C = re.compile(r'(<script id="companydata" type="application/json">)(.*?)(</script>)', re.S)
-TIMEOUT = 9
+JOBS_RE = re.compile(r'(<script id="jobdata" type="application/json">)(.*?)(</script>)', re.S)
+COMPANIES_RE = re.compile(r'(<script id="companydata" type="application/json">)(.*?)(</script>)', re.S)
 
-def inspect(url):
+# Negative indicators MUST be searched BEFORE positive text ("Apply" often appears
+# on generic error-page navigation). Escape/normalize punctuation and HTML entities.
+DEAD_TERMS = (
+    "cette offre n'est plus disponible",
+    "cette offre n’est plus disponible",
+    "offre n'est plus disponible",
+    "cette annonce n'est plus disponible",
+    "ce poste n'est plus disponible",
+    "offre expiree",
+    "l'offre n'est plus disponible",
+    "offre a ete pourvue",
+    "this job is no longer available",
+    "the job you are looking for is no longer available",
+    "this position has been filled",
+    "this job has expired",
+    "job posting has expired",
+    "this requisition is no longer available",
+    "this vacancy is closed",
+    "job not found",
+    "this posting is no longer accepting applications",
+    "we are no longer accepting applications for this position",
+    "poste pourvu",
+)
+POSITIVE_TERMS = ("je postule", "postuler à cette offre", "candidater sur", "apply now", "apply for this job", "postuler en un clic")
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (compatible; InternshipOpportunityAudit/2.0; public links)",
+    "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.7",
+    "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+}
+READ_LIMIT = 300_000
+TIMEOUT = 10
+
+class VisibleHTML(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts = []
+        self.skip = 0
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style", "noscript", "svg"):
+            self.skip += 1
+    def handle_endtag(self, tag):
+        if tag in ("script", "style", "noscript", "svg") and self.skip:
+            self.skip -= 1
+    def handle_data(self, data):
+        if not self.skip and data.strip():
+            self.parts.append(data)
+
+def normalized(s):
+    s = htmlmod.unescape(s)
+    s = re.sub(r"\s+", " ", s.replace("\u2019", "'").replace("\u00a0", " "))
+    return s.lower().strip()
+
+def probe(url):
+    parts = urlsplit(str(url))
+    if parts.scheme not in ("https", "http") or not parts.hostname:
+        return ("INVALID", "invalid", "Pas d'URL HTTP publique")
+    if parts.hostname.lower() in ("localhost", "127.0.0.1", "::1"):
+        return ("INVALID", "invalid", "URL locale non consultable")
     try:
-        parts = urlsplit(str(url))
-        if parts.scheme not in ("https", "http") or not parts.hostname:
-            return "INVALID", "URL non HTTP"
-        host = parts.hostname.lower()
-        if host in ("localhost", "127.0.0.1", "::1") or host.endswith(".local"):
-            return "INVALID", "Adresse non publique"
-        headers = {"User-Agent": AGENT, "Accept": "text/html,*/*;q=0.5"}
-        for method in ("HEAD", "GET"):
+        req = urllib.request.Request(url, headers=HEADERS, method="GET")
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as res:
+            code = res.status
+            raw = res.read(READ_LIMIT)
+            encoding = res.headers.get_content_charset() or "utf-8"
+            decoded = raw.decode(encoding, errors="replace")
+            parser = VisibleHTML()
             try:
-                if method == "GET":
-                    headers["Range"] = "bytes=0-2047"
-                req = urllib.request.Request(url, headers=headers, method=method)
-                with urllib.request.urlopen(req, timeout=TIMEOUT) as result:
-                    code = result.status
-                    if 200 <= code < 400:
-                        return str(code), "Page techniquement accessible; offre et candidature NON confirmées"
-                    return str(code), "Réponse HTTP; candidature non confirmée"
-            except urllib.error.HTTPError as error:
-                code = error.code
-                if code in (403, 404, 405, 410, 429, 501) and method == "HEAD":
-                    continue
-                if code in (401, 403, 429):
-                    return str(code), "Accès restreint/anti-bot; état réel INCONNU"
-                if code in (404, 410):
-                    return str(code), "Erreur HTTP du robot ; vérifier manuellement : faux négatif possible (HEAD/GET bloqués)"
-                return str(code), "HTTP erreur; révision nécessaire"
-        return "UNKNOWN", "Vérification incomplète"
-    except (TimeoutError, OSError, ValueError, urllib.error.URLError) as exc:
-        return "UNKNOWN", "Échec réseau ou délai; état réel INCONNU"
+                parser.feed(decoded)
+                visible = normalized(" ".join(parser.parts))
+            except Exception:
+                visible = normalized(re.sub("<[^>]*>", " ", decoded))
+            if any(term.replace("\u2019", "'") in visible for term in DEAD_TERMS):
+                return (str(code), "closed", "Page employeur indiquant que l'offre n'est plus disponible")
+            # Generic search pages/landing pages are not evidence for this specific stage.
+            if any(term in visible for term in POSITIVE_TERMS):
+                return (str(code), "listing_visible", "Annonce avec action Postuler visible; soumission NON testée")
+            return (str(code), "uncertain", "HTTP accessible mais annonce ou candidature non confirmée")
+    except urllib.error.HTTPError as error:
+        code = error.code
+        if code in (404, 410):
+            return (str(code), "likely_closed", "URL du poste introuvable (HTTP %d), vérifier manuellement" % code)
+        if code in (401, 403, 429):
+            return (str(code), "blocked", "Accès bot bloqué (HTTP %d) ; NE PAS conclure à l'expiration" % code)
+        return (str(code), "uncertain", "HTTP %d, examen manuel nécessaire" % code)
+    except (OSError, ValueError, UnicodeError, TimeoutError, socket.timeout) as err:
+        return ("UNKNOWN", "blocked", "Erreur de connexion/délai; résultat incertain")
 
-def write_csv(path, records, fields):
-    with path.open("w", encoding="utf-8", newline="") as dest:
-        writer = csv.DictWriter(dest, fieldnames=fields, extrasaction="ignore")
+def export_csv(path, items, fields):
+    with path.open("w", newline="", encoding="utf-8") as output:
+        writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
-        for item in records:
-            row = dict(item)
+        for rec in items:
+            row = dict(rec)
             for key in ("methods", "softwareTags", "tags"):
                 if isinstance(row.get(key), list):
                     row[key] = " | ".join(row[key])
             writer.writerow(row)
 
 def main():
-    html = INDEX.read_text(encoding="utf-8")
-    mj = PATTERN_J.search(html)
-    mc = PATTERN_C.search(html)
-    if mj is None or mc is None:
-        raise RuntimeError("Missing embedded JSON blocks; refusing to overwrite.")
-    jobs = json.loads(mj.group(2))
-    companies = json.loads(mc.group(2))
+    markup = INDEX.read_text(encoding="utf-8")
+    jblock = JOBS_RE.search(markup)
+    cblock = COMPANIES_RE.search(markup)
+    if not jblock or not cblock:
+        raise RuntimeError("Missing embedded database. Refusing to overwrite site.")
+    jobs = json.loads(jblock.group(2))
+    contacts = json.loads(cblock.group(2))
     if len(jobs) < 400:
-        raise RuntimeError("Unexpected listing-count drop; refusing to overwrite.")
-    cache = {}
-    unique = sorted({str(job.get("url", "")) for job in jobs if job.get("url")})
-    print("Auditing %d unique HTTP links in a corpus of %d records." % (len(unique), len(jobs)))
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        for url, result in zip(unique, pool.map(inspect, unique)):
-            cache[url] = result
+        raise RuntimeError("Unexpected data loss: fewer than 400 historic entries")
+    uniq = sorted({j.get("url") for j in jobs if j.get("url")})
+    print("Checking HTML job pages for %d unique links..." % len(uniq))
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        checks = dict(zip(uniq, pool.map(probe, uniq)))
     stats = {}
     for job in jobs:
-        status, detail = cache.get(job.get("url"), ("INVALID", "Lien manquant"))
-        job["http_status"] = status
+        code, state, evidence = checks.get(job.get("url"), ("INVALID", "invalid", "No link"))
+        job["http_status"] = code
         job["http_checked_at"] = STAMP
-        job["link_status"] = detail
-        for key in ("methods", "softwareTags", "tags"):
-            if not isinstance(job.get(key), list):
-                job[key] = []
-        stats[status] = stats.get(status, 0) + 1
-    jobs_payload = json.dumps(jobs, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
-    html = html[:mj.start(2)] + jobs_payload + html[mj.end(2):]
-    # Maintain a truthful separation between human review and automatic HTTP checks.
-    summary = (
-        "Contrôle technique automatique des liens : " + STAMP
-        + " · " + str(len(jobs)) + " annonces historiques · "
-        + str(stats.get("200", 0) + stats.get("206", 0)) + " réponses HTTP 200/206"
-        + " · cela ne prouve PAS que les candidatures sont ouvertes."
+        job["content_check_at"] = STAMP
+        job["content_check_state"] = state
+        job["content_evidence"] = evidence
+        reviewed_state = job.get("human_review", "")
+        if reviewed_state == "closed_confirmed":
+            job["availability_state"] = "closed"
+            job["closed"] = True
+        elif state == "closed":
+            job["availability_state"] = "closed"
+            job["closed"] = True
+            job["verification"] = "L'employeur indique que cette annonce n'est plus disponible (" + STAMP + ")."
+        elif state == "likely_closed":
+            # A 404 can be a false negative from an ATS/bot policy. Do NOT replace
+            # an explicit, evidence-backed human review with auto-closed.
+            if reviewed_state in ("posting_reviewed", "open_confirmed"):
+                job["availability_state"] = "uncertain"
+            else:
+                job["availability_state"] = "likely_closed"
+        elif state in ("blocked", "uncertain"):
+            if job.get("availability_state") not in ("closed", "listing_visible"):
+                job["availability_state"] = "uncertain"
+        elif state == "listing_visible":
+            if job.get("availability_state") not in ("closed",):
+                job["availability_state"] = "listing_visible"
+        for field in ("methods", "softwareTags", "tags"):
+            if not isinstance(job.get(field), list):
+                job[field] = []
+        stats[job["availability_state"]] = stats.get(job["availability_state"], 0) + 1
+        # Only exact offer-level addresses may appear in a job's application contact.
+        evidence_url = job.get("contact_source", "")
+        if evidence_url != job.get("url"):
+            job["contact_email"] = ""
+            job["contact_source"] = ""
+            job["contact_name"] = ""
+    # Highlight closed/visible counts, not misleading HTTP 200 totals.
+    stamp_line = (
+        "Révision automatique du contenu : " + STAMP + " · "
+        + str(len(jobs)) + " annonces au catalogue · "
+        + str(stats.get("listing_visible", 0)) + " fiches avec bouton candidater · "
+        + str(stats.get("closed", 0) + stats.get("likely_closed", 0))
+        + " liens fermés ou suspects · "
+        + "la disponibilité et le formulaire restent à confirmer."
     )
-    html = re.sub(
+    markup = markup[:jblock.start(2)] + json.dumps(jobs, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c") + markup[jblock.end(2):]
+    markup = re.sub(
         r'(<div id="daily-update"[^>]*>).*?(</div>)',
-        lambda m: m.group(1) + escape(summary) + m.group(2),
-        html, count=1, flags=re.S
+        lambda m: m.group(1) + htmlmod.escape(stamp_line) + m.group(2),
+        markup, count=1, flags=re.S
     )
-    INDEX.write_text(html, encoding="utf-8")
-    # Do not attach a generic company email or a contact for an unrelated
-    # offer to every posting from the same employer.
-    contacts_by_posting = {x.get("source"): x for x in companies
-                           if x.get("email") and x.get("source")
-                           and "/offre/detail/" in str(x.get("source"))}
-    for job in jobs:
-        exact_contact = contacts_by_posting.get(job.get("url"), {})
-        job["contact_email"] = exact_contact.get("email", "")
-        job["contact_source"] = exact_contact.get("source", "")
+    INDEX.write_text(markup, encoding="utf-8")
     job_fields = [
         "id","company","title","city","sector","level","cat","tech",
-        "methods","softwareTags","paymin","paymax","date","start",
-        "duration","url","verification","lastChecked","http_status",
-        "http_checked_at","link_status","contact_email","contact_source",
-        "manual_review","manual_checked_at","application_status",
-        "eligibility_note","verifiedBy"
+        "methods","softwareTags","paymin","paymax","date","start","duration",
+        "url","verification","lastChecked","http_status","http_checked_at",
+        "availability_state","content_check_at","content_evidence","link_status",
+        "contact_email","contact_name","contact_source","human_review",
+        "human_checked_at","application_status","eligibility_note","verifiedBy"
     ]
     contact_fields = [
-        "name","sector","city","office","suggestedRole","person",
-        "email","phone","contactUrl","recruitRoute","source","notes"
+        "name","sector","city","office","suggestedRole","person","email",
+        "phone","contactUrl","recruitRoute","source","notes"
     ]
-    write_csv(OUT / "internships.csv", jobs, job_fields)
-    write_csv(OUT / "contacts.csv", companies, contact_fields)
-    print("Saved site + CSV feeds; HTTP statuses:", stats)
-    print("Note: no NEW human review, application test, or new-offer discovery performed.")
+    export_csv(DATA / "internships.csv", jobs, job_fields)
+    export_csv(DATA / "contacts.csv", contacts, contact_fields)
+    print("Complete. Counts by evidence state:", stats)
 
 if __name__ == "__main__":
     main()
