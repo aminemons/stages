@@ -1,0 +1,51 @@
+name: Daily internship URL audit
+
+on:
+  schedule:
+    # 08:00 Algeria time = 07:00 UTC, subject to GitHub Actions scheduling delays
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: materials-internships-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Python version
+        run: python3 --version
+      - name: Verify existing internship URLs and refresh CSV export
+        run: python3 scripts/daily_links.py
+      - name: Validate embedded JSON
+        run: |
+          python3 - <<'PY'
+          import json, re
+          from pathlib import Path
+          content = Path('index.html').read_text(encoding='utf-8')
+          for part in ('jobdata', 'companydata'):
+              match = re.search(r'<script id="' + part + r'" type="application/json">(.*?)</script>', content, re.S)
+              assert match, part + ' missing'
+              print(part, len(json.loads(match.group(1))))
+          PY
+      - name: Commit verified technical changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html data/internships.csv data/contacts.csv
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "chore: daily HTTP link audit $(date -u +%F)"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
