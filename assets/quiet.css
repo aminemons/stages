@@ -1,0 +1,72 @@
+/* Quiet, readable job board — Outfit as used in Clipflow. */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+:root{--ink:#263345;--soft:#67768a;--muted:#8a96a6;--border:#e4e8ef;--blue:#4355b0;--bg:#f8f9fb;--bg2:#fff;font-family:'Outfit',Arial,sans-serif!important}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{font:400 14px/1.6 'Outfit',Arial,sans-serif;background:#f8f9fb;letter-spacing:0;color:#263345}
+button,input,select,textarea{font-family:inherit!important}
+a{color:#4355b0}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #adb9ec;outline-offset:2px}
+.container{max-width:1180px;padding:0 27px}
+header{background:#fff;padding:29px 0 0;border-bottom:1px solid #e7ebf1}
+header .lead{display:flex;align-items:center;gap:35px}
+.sup{font:750 11px 'Outfit',Arial,sans-serif;letter-spacing:.12em;color:#8290a2}
+h1{font-size:36px;letter-spacing:-.055em;line-height:1.18;font-weight:750;color:#1d2a3a;margin:7px 0}
+header p{font-size:14px;color:#748297;line-height:1.68;max-width:700px;margin:11px 0 13px}
+.stats{display:flex;gap:22px}.stat{min-width:80px}
+.stat strong{font-size:24px;color:#4355b0;font-weight:750}.stat span{font-size:11px;color:#8190a4}
+.tabs{margin:22px 0 0;gap:27px}
+.tab{font-family:inherit;font-size:14px;border-bottom:2px solid transparent;padding:13px 1px;color:#8693a3}
+.tab.active{color:#4355b0;border-color:#4355b0}
+.stick{background:transparent;position:static;backdrop-filter:none;border:0}
+.filters{max-width:1126px;margin:18px auto 0;background:#fff;padding:18px;border:1px solid #e6eaf0;border-radius:12px}
+.first{gap:10px}
+.search{border:1px solid #dfe5ec;border-radius:8px;height:44px;font-size:14px;padding:0 13px}
+.search::placeholder{color:#9ba6b5}
+.ctrl{background:#fff;color:#68778a;border:1px solid #e1e6ec;border-radius:8px;font:500 12px 'Outfit',Arial,sans-serif;height:40px}
+.btn{border:1px solid #dfe4ec;color:#4c5b75;font:600 12px 'Outfit',Arial,sans-serif;border-radius:8px;min-height:40px;padding:8px 13px}
+.btn.primary,.action{background:#4355b0;border-color:#4355b0;color:#fff;border-radius:8px}
+.btn.primary:hover,.action:hover{background:#34469e;color:white;text-decoration:none}
+.quick{gap:9px 16px;font-size:12px;color:#718096;margin:10px 0 0}
+.quick label{gap:6px}
+.quick input{accent-color:#4355b0}
+.quick .res{color:#8390a2}
+.advanced{margin-top:12px}.advanced summary{font-size:12px;color:#596b95}
+.advanced-grid{gap:13px}.fg label{font-size:12px;color:#8390a1}.fg input,.fg select{border-radius:7px;height:39px;font-size:12px}
+main.container{padding-top:12px}
+.section-meta{padding:10px 0 15px}.section-meta span{color:#8793a2;font-size:12px}
+.item{border:1px solid #e5eaf0;background:#fff;border-radius:12px;box-shadow:none;display:flex;align-items:flex-start;justify-content:space-between;gap:25px;margin-bottom:13px;padding:20px 22px}
+.item h2{font-size:17px;letter-spacing:-.018em;font-weight:730;line-height:1.4;color:#273648;margin:0 0 9px}
+.index{color:#b7c0cb;font-size:11px;margin-right:8px}
+.item .meta{font-size:12px;color:#8090a1;gap:8px 17px}
+.item .meta b{color:#52617a}
+.desc{font-size:13px;color:#6f7d90;line-height:1.7;margin-top:11px;max-width:760px}
+.chiprow{margin:12px 0 0;gap:6px}
+.chip{font-size:11px;font-weight:600;border-radius:6px;padding:4px 8px;background:#f4f6f8;color:#68768a;border-color:#eff1f4}
+.chip.blue{background:#eff1fc;color:#4b59aa;border-color:#e6eaf8}
+.chip.green{background:#eef6f1;color:#337852;border-color:#e3efe5}
+.chip.amber{background:#fff7eb;color:#946b31;border-color:#f1e8d9}
+.chip.red{background:#fff0ed;color:#ac574f;border-color:#f6e6e3}
+.side{min-width:165px;max-width:190px;align-items:stretch;gap:8px}
+.action{padding:10px 14px;text-align:center;font-size:12px;font-weight:700;justify-content:center}
+.action.disabled{background:#f2f3f6;border-color:#e8ebef;color:#96a2b1;pointer-events:none}
+.small{font-size:11px;color:#95a1ae;line-height:1.6}
+.note{font-size:12px;color:#8d7b72;line-height:1.55}
+.actions{gap:6px}.fav{font-size:18px;border-radius:7px;width:36px;height:36px}
+.actions select.ctrl{min-width:133px;max-width:140px;height:36px;font-size:11px}
+.foot{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-top:15px;padding-top:12px;border-top:1px solid #edf0f5;color:#8190a2;font-size:12px}
+.foot a{font-weight:650;color:#4558a5}
+.foot summary{cursor:pointer;color:#5362a3;font-weight:700}
+.foot details{width:100%}.foot details p{max-width:760px;margin:9px 0;line-height:1.7}
+.verify-pill{display:inline-block;font-size:11px;color:#7990ac;background:#f5f7fb;border:1px solid #e7edf7;border-radius:50px;padding:3px 9px;font-weight:650;margin-bottom:8px}
+.verify-pill.dead{background:#fff3f0;color:#ab5b52;border-color:#f4dfd9}
+.verify-pill.uncertain{background:#f7f7f8;color:#84909f;border-color:#eceef2}
+.top-accounts{padding:10px 0 12px;margin:0;color:#758398;font-size:12px}
+.top-accounts summary{cursor:pointer;font-weight:700;color:#4355b0}
+.accounts-links{display:flex;flex-wrap:wrap;gap:9px;padding-top:13px}
+.accounts-links a{display:inline-block;padding:7px 11px;border:1px solid #e4e8f1;border-radius:7px;font-size:12px;color:#455480;background:#fff}
+.accounts-links a:hover{border-color:#b9c4e9;text-decoration:none;background:#f7f8ff}
+.hero-note{color:#8290a4;font-size:12px;line-height:1.5;padding:0 0 13px}
+#loadmore{margin:22px auto 30px;display:block}
+.footer{font-size:11px;line-height:1.6}
+.contactline{font-size:12px}
+@media(max-width:850px){.lead{display:block}.stats{margin-top:15px}.item{gap:15px}.item .side{min-width:155px}}
+@media(max-width:630px){.container{padding:0 15px}header{padding:20px 0 0}h1{font-size:29px}.stats{gap:20px}.stat strong{font-size:20px}.tabs{gap:17px}.item{display:block;padding:17px 16px}.item h2{font-size:16px}.side{margin-top:14px;max-width:none;display:flex;flex-wrap:wrap;align-items:center}.action{min-width:136px}.filters{padding:14px}.advanced-grid{grid-template-columns:1fr 1fr}.search{min-width:0}.footer{padding-bottom:40px}}
