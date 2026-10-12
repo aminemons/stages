@@ -8,6 +8,7 @@ import html as htmlmod
 import json
 import re
 import socket
+import unicodedata
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -76,7 +77,8 @@ def normalized(s):
     s = re.sub(r"\s+", " ", s.replace("\u2019", "'").replace("\u00a0", " "))
     return s.lower().strip()
 
-def probe(url):
+def probe(url, expected_title=""):
+    """Check this subject; generic application navigation is insufficient."""
     parts = urlsplit(str(url))
     if parts.scheme not in ("https", "http") or not parts.hostname:
         return ("INVALID", "invalid", "Pas d'URL HTTP publique")
@@ -98,7 +100,10 @@ def probe(url):
             if any(term.replace("\u2019", "'") in visible for term in DEAD_TERMS):
                 return (str(code), "closed", "Page employeur indiquant que l'offre n'est plus disponible")
             # Generic search pages/landing pages are not evidence for this specific stage.
-            if any(term in visible for term in POSITIVE_TERMS):
+            tokens = set(re.findall(r"[a-z0-9]+", unicodedata.normalize("NFD", expected_title).encode("ascii", "ignore").decode().lower())) - {"stage", "ingenieur", "de", "des", "du", "la", "le", "et", "f", "h"}
+            page_head = unicodedata.normalize("NFD", visible[:2200]).encode("ascii", "ignore").decode().lower()
+            subject_match = bool(tokens) and sum(t in page_head for t in tokens) / len(tokens) >= 0.5
+            if subject_match and any(term in visible for term in POSITIVE_TERMS):
                 return (str(code), "listing_visible", "Annonce avec action Postuler visible; soumission NON testée")
             return (str(code), "uncertain", "HTTP accessible mais annonce ou candidature non confirmée")
     except urllib.error.HTTPError as error:
@@ -113,7 +118,7 @@ def probe(url):
 
 def export_csv(path, items, fields):
     with path.open("w", newline="", encoding="utf-8") as output:
-        writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
+        writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
         writer.writeheader()
         for rec in items:
             row = dict(rec)
@@ -132,13 +137,14 @@ def main():
     contacts = json.loads(cblock.group(2))
     if len(jobs) < 400:
         raise RuntimeError("Unexpected data loss: fewer than 400 historic entries")
-    uniq = sorted({j.get("url") for j in jobs if j.get("url")})
+    titles = {j.get("official_url") or j.get("url"): j.get("title", "") for j in jobs if j.get("url")}
+    uniq = sorted(titles)
     print("Checking HTML job pages for %d unique links..." % len(uniq))
     with ThreadPoolExecutor(max_workers=3) as pool:
-        checks = dict(zip(uniq, pool.map(probe, uniq)))
+        checks = dict(zip(uniq, pool.map(lambda url: probe(url, titles[url]), uniq)))
     stats = {}
     for job in jobs:
-        code, state, evidence = checks.get(job.get("url"), ("INVALID", "invalid", "No link"))
+        code, state, evidence = checks.get(job.get("official_url") or job.get("url"), ("INVALID", "invalid", "No link"))
         job["http_status"] = code
         job["http_checked_at"] = STAMP
         job["content_check_at"] = STAMP
@@ -160,7 +166,7 @@ def main():
             else:
                 job["availability_state"] = "likely_closed"
         elif state in ("blocked", "uncertain"):
-            if job.get("availability_state") not in ("closed", "listing_visible"):
+            if job.get("availability_state") != "closed":
                 job["availability_state"] = "uncertain"
         elif state == "listing_visible":
             if job.get("availability_state") not in ("closed",):
@@ -169,21 +175,13 @@ def main():
             if not isinstance(job.get(field), list):
                 job[field] = []
         stats[job["availability_state"]] = stats.get(job["availability_state"], 0) + 1
-        # Only exact offer-level addresses may appear in a job's application contact.
-        evidence_url = job.get("contact_source", "")
-        if evidence_url != job.get("url"):
+        # A sourced recruiter post or HR page can differ from the job URL.
+        # Keep source + scope; do not erase independently researched contacts.
+        if job.get("contact_email") and not job.get("contact_source"):
             job["contact_email"] = ""
-            job["contact_source"] = ""
             job["contact_name"] = ""
     # Highlight closed/visible counts, not misleading HTTP 200 totals.
-    stamp_line = (
-        "Révision automatique du contenu : " + STAMP + " · "
-        + str(len(jobs)) + " annonces au catalogue · "
-        + str(stats.get("listing_visible", 0)) + " fiches avec bouton candidater · "
-        + str(stats.get("closed", 0) + stats.get("likely_closed", 0))
-        + " liens fermés ou suspects · "
-        + "la disponibilité et le formulaire restent à confirmer."
-    )
+    stamp_line = "Contrôle des liens : " + STAMP
     markup = markup[:jblock.start(2)] + json.dumps(jobs, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c") + markup[jblock.end(2):]
     markup = re.sub(
         r'(<div id="daily-update"[^>]*>).*?(</div>)',
@@ -191,18 +189,23 @@ def main():
         markup, count=1, flags=re.S
     )
     INDEX.write_text(markup, encoding="utf-8")
-    job_fields = [
-        "id","company","title","city","sector","level","cat","tech",
-        "methods","softwareTags","paymin","paymax","date","start","duration",
-        "url","verification","lastChecked","http_status","http_checked_at",
-        "availability_state","content_check_at","content_evidence","link_status",
-        "contact_email","contact_name","contact_source","human_review",
-        "human_checked_at","application_status","eligibility_note","verifiedBy"
-    ]
-    contact_fields = [
-        "name","sector","city","office","suggestedRole","person","email",
-        "phone","contactUrl","recruitRoute","source","notes"
-    ]
+    previous_csv = DATA / "internships.csv"
+    if previous_csv.exists():
+        with previous_csv.open(encoding="utf-8") as stream:
+            job_fields = next(csv.reader(stream))
+    else:
+        job_fields = ["id", "company", "title", "city", "url"]
+    for field in ("official_url", "contact_scope", "hr_contact_email", "hr_contact_source",
+                  "hr_contact_note", "research_checked_at", "research_status", "research_source",
+                  "research_note", "duplicate_of", "salary_verified", "salary_source"):
+        if field not in job_fields:
+            job_fields.append(field)
+    contacts_csv = DATA / "contacts.csv"
+    if contacts_csv.exists():
+        with contacts_csv.open(encoding="utf-8") as stream:
+            contact_fields = next(csv.reader(stream))
+    else:
+        contact_fields = ["name", "email", "person", "source", "notes"]
     export_csv(DATA / "internships.csv", jobs, job_fields)
     export_csv(DATA / "contacts.csv", contacts, contact_fields)
     print("Complete. Counts by evidence state:", stats)
