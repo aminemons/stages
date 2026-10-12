@@ -5,7 +5,6 @@ No email is sent, no login attempted, no job application submitted.
 """
 from __future__ import annotations
 import csv
-import io
 import json
 import re
 import urllib.error
@@ -47,12 +46,12 @@ def inspect(url):
                     return str(code), "Réponse HTTP; candidature non confirmée"
             except urllib.error.HTTPError as error:
                 code = error.code
-                if code in (405, 501) and method == "HEAD":
+                if code in (403, 404, 405, 410, 429, 501) and method == "HEAD":
                     continue
                 if code in (401, 403, 429):
                     return str(code), "Accès restreint/anti-bot; état réel INCONNU"
                 if code in (404, 410):
-                    return str(code), "Lien introuvable; vérifier sur le portail officiel"
+                    return str(code), "Erreur HTTP du robot ; vérifier manuellement : faux négatif possible (HEAD/GET bloqués)"
                 return str(code), "HTTP erreur; révision nécessaire"
         return "UNKNOWN", "Vérification incomplète"
     except (TimeoutError, OSError, ValueError, urllib.error.URLError) as exc:
@@ -110,16 +109,22 @@ def main():
         html, count=1, flags=re.S
     )
     INDEX.write_text(html, encoding="utf-8")
-    emails = {x["name"].casefold(): x for x in companies if x.get("email") and x.get("source")}
+    # Do not attach a generic company email or a contact for an unrelated
+    # offer to every posting from the same employer.
+    contacts_by_posting = {x.get("source"): x for x in companies
+                           if x.get("email") and x.get("source")
+                           and "/offre/detail/" in str(x.get("source"))}
     for job in jobs:
-        contact = emails.get(str(job.get("company", "")).casefold(), {})
-        job["contact_email"] = contact.get("email", "")
-        job["contact_source"] = contact.get("source", "")
+        exact_contact = contacts_by_posting.get(job.get("url"), {})
+        job["contact_email"] = exact_contact.get("email", "")
+        job["contact_source"] = exact_contact.get("source", "")
     job_fields = [
         "id","company","title","city","sector","level","cat","tech",
         "methods","softwareTags","paymin","paymax","date","start",
         "duration","url","verification","lastChecked","http_status",
-        "http_checked_at","link_status","contact_email","contact_source"
+        "http_checked_at","link_status","contact_email","contact_source",
+        "manual_review","manual_checked_at","application_status",
+        "eligibility_note","verifiedBy"
     ]
     contact_fields = [
         "name","sector","city","office","suggestedRole","person",
@@ -128,7 +133,7 @@ def main():
     write_csv(OUT / "internships.csv", jobs, job_fields)
     write_csv(OUT / "contacts.csv", companies, contact_fields)
     print("Saved site + CSV feeds; HTTP statuses:", stats)
-    print("Note: no human review, application test, or new-offer discovery performed.")
+    print("Note: no NEW human review, application test, or new-offer discovery performed.")
 
 if __name__ == "__main__":
     main()
