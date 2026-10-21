@@ -184,7 +184,7 @@ def main():
     stamp_line = "Contrôle des liens : " + STAMP
     markup = markup[:jblock.start(2)] + json.dumps(jobs, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c") + markup[jblock.end(2):]
     markup = re.sub(
-        r'(<div id="daily-update"[^>]*>).*?(</div>)',
+        r'(<span id="daily-update"[^>]*>).*?(</span>)',
         lambda m: m.group(1) + htmlmod.escape(stamp_line) + m.group(2),
         markup, count=1, flags=re.S
     )
