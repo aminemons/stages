@@ -16,7 +16,7 @@ function materialCategory(j) {
   if(j.materials_exclude || retired(j) || j.duplicate_of || j.cat==='m2') return '';
   const t=matNorm(j.title), full=matNorm([j.title,j.tech,j.materials_focus].join(' '));
   // No programming-/simulation-led internships in this dedicated area.
-  if(/modelis|simulat|jumeau numerique|machine learning|programm|developpement logiciel|intelligence artificielle|\bdata\b|cfd|calcul scientifique|numerique|algorithm|python|metamodel|ia pour|ia appliquee/.test(t))return '';
+  if(/modelis|simulat|jumeau numerique|machine learning|programm|developpement logiciel|intelligence artificielle|\bdata\b|donnees|cout de batterie|base de donnees|rationalisation|digitalis|\bplm\b|cfd|calcul scientifique|numerique|algorithm|python|metamodel|ia pour|ia appliquee/.test(t))return '';
   if(/marketing|commercial|supply chain|erp|web|logiciel|business manager|communication|finance|achats|cybersecurite|informatique|management de projet/.test(t))return '';
   if(!j.materials_focus && !/(materiau|nanomat|polym|rheolog|composite|caracteris|spectros|microstruct|metallurg|cerami|verre|vitr|optiqu|photon|couche mince|microfabri|lithograph|photovolta|batterie|electrochim|corrosion|revetement|traitement de surface|synthese|formul|biomateriau|frittage|polissage|semiconduct|semi-conduct|mesure physico|microstructure|adhesion|chimie du solide|microscop)/.test(t))return '';
   if(/hydrogel|biomateriau|polym|rheolog|composite|formul|adhesif|caoutchouc|elastom|thermoplast/.test(full))return 'polymer';
@@ -33,6 +33,7 @@ function materialM1Status(j) {
   if(j.cat==='m2')return 'excluded';
   const info=matNorm([j.level,j.eligibility_note].join(' '));
   // A broad catalog category or a simple successful HTTP request is not proof.
+  if(/a confirmer|non confirme|contradictoire/.test(info))return 'uncertain';
   const body=j.audit_evidence_type==='body';
   const accepts=/bac\s*\+\s*4|master\s*1|\bm1\b|quatrieme annee|4eme annee|2eme annee de cycle ingenieur/.test(info);
   const onlyFinal=/(?:exclusivement|uniquement|obligatoirement).{0,25}(?:m2|bac\s*\+\s*5|derniere annee)/.test(info);
