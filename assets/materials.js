@@ -18,6 +18,9 @@ function materialCategory(j) {
   // No programming-/simulation-led internships in this dedicated area.
   if(/modelis|simulat|jumeau numerique|machine learning|programm|developpement logiciel|intelligence artificielle|\bdata\b|donnees|cout de batterie|base de donnees|rationalisation|digitalis|\bplm\b|cfd|calcul scientifique|numerique|algorithm|python|metamodel|ia pour|ia appliquee/.test(t))return '';
   if(/marketing|commercial|supply chain|erp|web|logiciel|business manager|communication|finance|achats|cybersecurite|informatique|management de projet/.test(t))return '';
+  // A functional-materials section should not silently recommend jobs demanding code.
+  const requirements=matNorm([j.tech,j.eligibility_note].join(' '));
+  if(/\bpython\b|\bmatlab\b|\bjavascript\b|\bc\+\+\b|\bcode_aster\b|machine learning|\bcfd\b|programmation|developpement de code/.test(requirements))return '';
   if(!j.materials_focus && !/(materiau|nanomat|polym|rheolog|composite|caracteris|spectros|microstruct|metallurg|cerami|verre|vitr|optiqu|photon|couche mince|microfabri|lithograph|photovolta|batterie|electrochim|corrosion|revetement|traitement de surface|synthese|formul|biomateriau|frittage|polissage|semiconduct|semi-conduct|mesure physico|microstructure|adhesion|chimie du solide|microscop)/.test(t))return '';
   if(/hydrogel|biomateriau|polym|rheolog|composite|formul|adhesif|caoutchouc|elastom|thermoplast/.test(full))return 'polymer';
   if(/nanomat|couche mince|nanopart|depot sous vide|lithograph|microfabri/.test(full))return 'nano';
