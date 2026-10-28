@@ -75,6 +75,8 @@ function renderMaterials(){
   const matches=filteredMaterials();
   $('material-total').textContent=pool.length;
   $('materials-metric-count').textContent=pool.length+' sujets matériaux présélectionnés';
+  const individuallyDocumented=pool.filter(j=>j.audit_evidence_type==='body'&&(j.research_source||j.official_url||j.url)).length;
+  $('materials-target-progress').textContent=individuallyDocumented+' / 400 fiches matériaux avec descriptif employeur relu · objectif cumulatif';
   $('materials-metric-m1').textContent=pool.filter(j=>materialM1Status(j)==='confirmed').length+' avec Bac+4 étayé';
   $('materials-metric-salary').textContent=pool.filter(j=>j.salary_verified&&Number(j.paymin)>0).length+' rémunérations documentées';
   $('materials-count').textContent=matches.length+' résultat'+(matches.length>1?'s':'');
