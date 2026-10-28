@@ -36,7 +36,7 @@ function materialM1Status(j) {
   if(j.cat==='m2')return 'excluded';
   const info=matNorm([j.level,j.eligibility_note].join(' '));
   // A broad catalog category or a simple successful HTTP request is not proof.
-  if(/a confirmer|non confirme|contradictoire/.test(info))return 'uncertain';
+  if(/a confirmer|non confirme|non explicite|contradictoire|m1 incertain|m1 pas explicitement|en-tete contradictoire/.test(info))return 'uncertain';
   const body=j.audit_evidence_type==='body';
   const accepts=/bac\s*\+\s*4|master\s*1|\bm1\b|quatrieme annee|4eme annee|2eme annee de cycle ingenieur/.test(info);
   const onlyFinal=/(?:exclusivement|uniquement|obligatoirement).{0,25}(?:m2|bac\s*\+\s*5|derniere annee)/.test(info);
