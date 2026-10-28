@@ -20,7 +20,10 @@ function materialCategory(j) {
   if(/marketing|commercial|supply chain|erp|web|logiciel|business manager|communication|finance|achats|cybersecurite|informatique|management de projet/.test(t))return '';
   // A functional-materials section should not silently recommend jobs demanding code.
   const requirements=matNorm([j.tech,j.eligibility_note].join(' '));
-  if(/\bpython\b|\bmatlab\b|\bjavascript\b|\bc\+\+\b|\bcode_aster\b|machine learning|\bcfd\b|programmation|developpement de code/.test(requirements))return '';
+  // Optional Python/Matlab or Excel-based analysis is NOT a software internship.
+  // Exclude explicit essential programming; do not infer it from a tool name alone.
+  if(j.materials_programming==='essential'||j.materials_programming==='required')return '';
+  if(j.materials_programming!=='optional' && /programmation (?:python|matlab|c\+\+|obligatoire|requise)|developpement de code (?:obligatoire|exige)|maitrise de (?:python|c\+\+) exigee/.test(requirements))return '';
   if(!j.materials_focus && !/(materiau|nanomat|polym|rheolog|composite|caracteris|spectros|microstruct|metallurg|cerami|verre|vitr|optiqu|photon|couche mince|microfabri|lithograph|photovolta|batterie|electrochim|corrosion|revetement|traitement de surface|synthese|formul|biomateriau|frittage|polissage|semiconduct|semi-conduct|mesure physico|microstructure|adhesion|chimie du solide|microscop)/.test(t))return '';
   if(/hydrogel|biomateriau|polym|rheolog|composite|formul|adhesif|caoutchouc|elastom|thermoplast/.test(full))return 'polymer';
   if(/nanomat|couche mince|nanopart|depot sous vide|lithograph|microfabri/.test(full))return 'nano';
@@ -75,8 +78,11 @@ function renderMaterials(){
   const matches=filteredMaterials();
   $('material-total').textContent=pool.length;
   $('materials-metric-count').textContent=pool.length+' sujets matériaux présélectionnés';
-  const individuallyDocumented=pool.filter(j=>j.audit_evidence_type==='body'&&(j.research_source||j.official_url||j.url)).length;
-  $('materials-target-progress').textContent=individuallyDocumented+' / 400 fiches matériaux avec descriptif employeur relu · objectif cumulatif';
+  const historicallyMaterial=j=>!!materialCategory({...j,closed:false,human_review:'posting_reviewed',availability_state:'listing_visible'});
+  const documented=JOBS.filter(j=>historicallyMaterial(j)&&j.audit_evidence_type==='body'&&(j.research_source||j.official_url||j.url));
+  const visible=pool.filter(j=>j.audit_evidence_type==='body'&&j.availability_state==='listing_visible').length;
+  const m1=pool.filter(j=>materialM1Status(j)==='confirmed').length;
+  $('materials-target-progress').textContent=documented.length+' / 400 fiches matériaux relues cumulées · '+visible+' fiches actuellement visibles · '+m1+' Bac+4 étayés · objectif 400';
   $('materials-metric-m1').textContent=pool.filter(j=>materialM1Status(j)==='confirmed').length+' avec Bac+4 étayé';
   $('materials-metric-salary').textContent=pool.filter(j=>j.salary_verified&&Number(j.paymin)>0).length+' rémunérations documentées';
   $('materials-count').textContent=matches.length+' résultat'+(matches.length>1?'s':'');
