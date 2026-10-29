@@ -40,6 +40,6 @@ Revue de pages de postes exactes d'employeurs, de laboratoires et d'annonces ins
 
 ## Intégrité et publication
 - Les identifiants `stage-N` n'ont pas été renumérotés; le filtre « Ajout au site » s'appuie sur `added_on=2026-10-29` pour les trois nouvelles fiches.
-- Google Sheets : ajout de 3 IDs dans **Flux automatique GitHub**, mise à jour des 3 fiches recontrôlées; **Suivi des candidatures** laissé intact.
+- Google Sheets : ajout de 3 IDs dans **Flux automatique GitHub** (475 lignes avec en-tête) **et Inventaire – 415 offres** (502 lignes avec en-tête); mise à jour des 3 fiches recontrôlées dans les deux onglets. L'inventaire conserve ses doublons historiques et ses 24 IDs supplémentaires, sans suppression. **Suivi des candidatures** laissé intact.
 - Le texte « Dernière recherche » a été porté au 29/10/2026 après revue réelle. « Contrôle des liens » reste au 26/10/2026, sans inventer un audit quotidien.
 - L'état final de la production Vercel doit être vérifié séparément sur le SHA exact du dernier commit.
