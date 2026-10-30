@@ -6,11 +6,11 @@
 - **1 identifiant matériaux historique récupéré depuis l'overlay** et intégré au catalogue canonique : `opmobility-391870` (microperforation/texturation laser, Bac+4/Bac+5). La page officielle indique maintenant que le poste est déjà pourvu; il est conservé comme fiche historique, pas comme offre ouverte.
 - **3 autres identifiants de l'overlay** intégrés au catalogue général et au CSV : `opmobility-1447594333`, `sg-fra40549`, `ingerop-ref1097z`. Ils ne sont pas dans Matériaux fonctionnels (simulation/IA/génie civil); les statuts actuels sont visibles pour les deux premières fiches et likely_closed pour Ingérop.
 - **29 patchs d'audit** de l'overlay du 21/10 ont été fusionnés dans les enregistrements canoniques HTML et CSV. L'overlay est conservé; les IDs sont dédupliqués au chargement.
-- **29 fiches** dans la vue Matériaux fonctionnels non retirées.
+- **28 fiches** dans la vue Matériaux fonctionnels non retirées.
 - **27 fiches matériaux avec descriptif exact historiquement relu / 400** (373 restantes). Ce compteur est cumulatif; il ne représente pas des offres ouvertes.
 - **17 fiches** avec corps exact actuellement visible selon le dernier contrôle individuel.
 - **15 profils M1/Bac+4 confirmés** dans la vue active; les profils sans année ou réservés à l'école d'ingénieur sont séparés comme incertains.
-- **7 fiches** avec montant numérique vérifié dans la vue active. Les offres rémunérées sans montant restent sans valeur inventée.
+- **6 fiches** avec montant numérique vérifié dans la vue active. Les offres rémunérées sans montant restent sans valeur inventée.
 - Catalogue général : **478 IDs uniques** dans le JSON HTML préparé et **478 lignes de données uniques** dans le CSV.
 - IDs originaux `stage-N` : **409**; l'attente historique était 416, soit **7 IDs manquants** parmi stage-1 à stage-416. Aucun ID manquant n'a été recréé.
 - Doublons d'IDs HTML/CSV : **0**.
@@ -26,6 +26,7 @@ Revue tournante sur CEA, IFPEN, Saint-Gobain, Arkema, Michelin, OPmobility, MBDA
 | `cea-2026-42053` | listing_visible; rhéologie expérimentale de polymères PV, TPO, vieillissement, rhéomètre | M1 explicite | Non publié; espace candidat visible, pas de bouton Postuler spécifique repéré |
 | `cea-2026-41435` | uncertain; URL exacte non récupérable aujourd'hui, dernière lecture du corps le 28/10 | M1 annoncé, spécialisation optique/instrumentation à confirmer | Non publié; candidature non testée |
 | `cea-2026-41565` | listing_visible; corrosion céramiques/sels fondus, électrochimie, MEB, DRX, ICP | Master/Bac+4/+5 chimie ou matériaux | Non publié; enquête administrative CEA pour tous les collaborateurs |
+| `edf-2026-183807` | listing_visible; mesures de lignes thermocouple, réflectométrie et validation expérimentale; conservé dans le catalogue général, **exclu de Matériaux fonctionnels** | M1/M2 électronique/RF/signal/physique appliquée | 1 230–1 557 €/mois brut; bouton Je postule; contact Kévin Guilloy (`kevin.guilloy@edf.fr`) publié sur la fiche |
 | `ifpen-347330` | listing_visible; vieillissement d'isolants polymères offshore, IR/ATG/DSC/impédancemétrie | M1/M2 explicite | 1 075–1 130 € brut/mois; lien Répondre visible |
 | `ifpen-347322` | listing_visible; électrocatalyse biomasse, électrochimie, RMN/HPLC/UV-Vis | Année de Master non précisée | 1 130 € brut/mois; lien Répondre visible |
 | `ifpen-347520` | listing_visible; synthèse zéolithes cœur-coquille et catalyse recyclage plastique | Master cité, année M1 inconnue | Rémunération annoncée sans montant; lien Répondre visible |
@@ -58,6 +59,6 @@ Revue tournante sur CEA, IFPEN, Saint-Gobain, Arkema, Michelin, OPmobility, MBDA
 
 - La date « Dernière recherche » est portée au 30/10/2026 après revue substantielle; « Contrôle des liens » reste au 26/10/2026, aucun audit HTTP quotidien n'est inventé.
 - Le filtre « Ajout au site » conserve `added_on=2026-10-21` pour les quatre fiches historiques de l'overlay; la date de publication employeur n'est pas utilisée comme date d'ajout.
-- Aucun nouvel e-mail de recruteur n'a été ajouté sans preuve directe; aucun message ni aucune candidature n'ont été envoyés.
+- Le contact Kévin Guilloy (`kevin.guilloy@edf.fr`) était déjà présent dans le référentiel Contacts, avec l'URL exacte de l'offre EDF 2026-183807; aucun contact supplémentaire n'a été inventé. Aucun message ni aucune candidature n'ont été envoyés.
 - Google Sheets n'a pas pu être mis à jour ni relu dans ce run : aucun connecteur Google Sheets n'est exposé dans les outils disponibles. Les onglets « Flux automatique GitHub », « Inventaire – 415 offres » et « Contacts publics » restent donc non vérifiés ici; « Suivi des candidatures » n'a fait l'objet d'aucune écriture.
 - L'état des exécutions planifiées GitHub Actions n'est pas exposé par le connecteur disponible; le fichier workflow existe mais son dernier run ne peut pas être confirmé.
