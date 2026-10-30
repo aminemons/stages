@@ -13,7 +13,7 @@ const matNorm = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'
 let materialsShown=24;
 
 function materialCategory(j) {
-  if(j.materials_exclude || retired(j) || j.duplicate_of || j.cat==='m2') return '';
+  if(j.materials_exclude || retired(j) || j.duplicate_of || j.cat==='m2' || Number(j.materials_priority)<0) return '';
   const t=matNorm(j.title), full=matNorm([j.title,j.tech,j.materials_focus].join(' '));
   // No programming-/simulation-led internships in this dedicated area.
   if(/modelis|simulat|jumeau numerique|machine learning|programm|developpement logiciel|intelligence artificielle|\bdata\b|donnees|cout de batterie|base de donnees|rationalisation|digitalis|\bplm\b|cfd|calcul scientifique|numerique|algorithm|python|metamodel|ia pour|ia appliquee/.test(t))return '';
