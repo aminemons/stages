@@ -15,6 +15,9 @@ La fiche Saint-Gobain FRA40819 est datée du **30/10/2026** et montre un bouton 
 
 ## Contrôles supplémentaires et exclusions motivées
 
+- **IS2M polythioesters M1** : qualification de preuve corrigée le 31/10 : publication institutionnelle LinkedIn vérifiée mais descriptif intégral/PDF non accessible. La fiche reste disponible avec statut de candidature incertain, et n'entre pas dans le compteur strict des corps d'annonces employeur relus.
+
+
 - **CEA-Leti 2026-42308**, nanostructuration d'oxydes par dépôt sélectif ALD : excellent sujet expérimental mais **Master 2 / troisième année d'ingénieur** explicitement requis ; **exclu** de la sélection M1. https://www.emploi.cea.fr/offre-de-emploi/emploi-nanostructuration-d-oxydes-par-depot-selectif-h-f_42308.aspx
 - **CEA 2026-41992**, nanogels polymériques : dernière année d'école d'ingénieur ou **Master 2** requis ; exclu de la sélection M1. https://www.emploi.cea.fr/offre-de-emploi/emploi-stage-developpement-et-caracterisation-physico-chimique-de-nanogels-h-f-_41992.aspx
 - **Saint-Gobain FRA40577** (microstructure et perméabilité de blocs réfractaires) et **FRA40500** (fibres d'alumine pour composites) : toutes deux réservées à la **dernière année d'école d'ingénieur**. Les 1 200–1 500 €/mois publiés ne justifient pas de les présenter comme accessibles à une étudiante M1.
@@ -28,7 +31,7 @@ La fiche Saint-Gobain FRA40819 est datée du **30/10/2026** et montre un bouton 
 ## Intégrité et synchronisation
 
 - **482** fiches HTML et **482** lignes de données CSV, mêmes identifiants.
-- **31** fiches matériaux à descriptif employeur individuel revu cumulativement, **objectif 400** ; inclut les historiques clos. **369** restent à documenter.
+- **30** fiches matériaux avec corps de fiche employeur individuel relu cumulativement, **objectif 400** ; inclut les historiques clos. **370** restent à documenter. La publication LinkedIn institutionnelle IS2M (stage M1 polythioesters) reste dans la sélection comme piste sourcée, mais n'est **plus comptée** comme fiche employeur intégralement lue faute de PDF ou description complète.
 - **32** sujets matériaux non retirés ; parmi eux **21** descriptions exactes visibles et revues, **19** niveaux M1/Bac+4 étayés, **7** gratifications publiées. Une fiche visible n'est pas une garantie de candidature ouverte.
 - **409** identifiants originaux `stage-N`; `stage-410` à `stage-416` restent absents et ne sont pas recréés artificiellement.
 - **Google Sheets** : les quatre enregistrements déjà canonisés le 30/10 (overlay) mais manquants dans `Flux automatique GitHub` ont été ajoutés, puis les quatre nouvelles annonces. **8 lignes ajoutées au flux**. Les quatre nouvelles annonces ont aussi été ajoutées à `Inventaire – 415 offres`, les quatre enregistrements historiques y étant déjà présents. `Suivi des candidatures` **non modifié** ; `Contacts publics` inchangé (aucun nouveau contact de rôle vérifié).
