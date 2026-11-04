@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/daily-link-audit.yml'
       - 'scripts/daily_links.py'
+      - 'scripts/check_dashboard.cjs'
   schedule:
     # 08:00 Algeria time = 07:00 UTC, subject to GitHub Actions scheduling delays
     - cron: "0 7 * * *"
